@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Turbo Mobile</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #333; font-family: sans-serif; }
+        canvas { display: block; margin: 0 auto; background: #555; touch-action: none; }
+    </style>
+</head>
+<body>
+    <canvas id="raceCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("raceCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let gameActive = true;
+    
+    // Игрок (синяя машинка)
+    const player = {
+        x: canvas.width / 2 - 25,
+        y: canvas.height - 120,
+        w: 50,
+        h: 80,
+        color: "#3498db"
+    };
+
+    let enemies = [];
+    let enemySpeed = 5;
+
+    function createEnemy() {
+        const laneWidth = canvas.width / 3;
+        const lane = Math.floor(Math.random() * 3);
+        enemies.push({
+            x: lane * laneWidth + (laneWidth/2 - 25),
+            y: -100,
+            w: 50,
+            h: 80,
+            color: "#e74c3c"
+        });
+    }
+
+    function draw() {
+        if (!gameActive) return;
+
+        // Рисуем дорогу
+        ctx.fillStyle = "#444";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Разметка
+        ctx.strokeStyle = "white";
+        ctx.setLineDash([20, 20]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/3, 0); ctx.lineTo(canvas.width/3, canvas.height);
+        ctx.moveTo(canvas.width*2/3, 0); ctx.lineTo(canvas.width*2/3, canvas.height);
+        ctx.stroke();
+
+        // Рисуем игрока
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        // Фары игрока
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(player.x + 5, player.y, 10, 5);
+        ctx.fillRect(player.x + 35, player.y, 10, 5);
+
+        // Враги
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.y += enemySpeed;
+
+            ctx.fillStyle = e.color;
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+
+            // Проверка столкновения
+            if (player.x < e.x + e.w && player.x + player.w > e.x &&
+                player.y < e.y + e.h && player.y + player.h > e.y) {
+                gameOver();
+            }
+
+            if (e.y > canvas.height) {
+                enemies.splice(i, 1);
+                score++;
+                if (score % 5 === 0) enemySpeed += 0.2; // Ускорение
+            }
+        }
+
+        // Счет
+        ctx.fillStyle = "white";
+        ctx.font = "bold 24px Arial";
+        ctx.fillText("Счёт: " + score, 20, 40);
+
+        requestAnimationFrame(draw);
+    }
+
+    function gameOver() {
+        gameActive = false;
+        alert("Бум! Твой счёт: " + score);
+        location.reload(); 
+    }
+
+    // Управление пальцем (просто водишь по экрану)
+    window.addEventListener("pointermove", (e) => {
+        player.x = e.clientX - player.w / 2;
+        // Ограничение, чтобы не уезжать за экран
+        if (player.x < 0) player.x = 0;
+        if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+    });
+
+    setInterval(createEnemy, 1200);
+    draw();
+</script>
+</body>
+</html>
